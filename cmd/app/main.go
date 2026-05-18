@@ -1,50 +1,35 @@
 package main
 
 import (
-    "context"
     "log"
     "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
-
-httpDelivery "goproject/internal/waterService/delivery/http"
+    "github.com/jmoiron/sqlx"
+    _ "github.com/lib/pq"
+    "goproject/internal/config"
+    "goproject/internal/waterService/delivery/http"
     "goproject/internal/waterService/repository"
     "goproject/internal/waterService/usecase"
 )
 
 func main() {
-    repo := repository.New()
-    uc := usecase.New(repo)
-    h := httpDelivery.New(uc)
-
+    cfg, err := config.New()
+    if err != nil {
+        log.Fatal(err)
+    }
+    db, err := sqlx.Connect("postgres", cfg.DB.DSN())
+    if err != nil {
+        log.Fatal(err)
+    }
+    userRepo := repository.NewUserRepo(db)
+    sessionRepo := repository.NewSessionRepo(db)
+    orderRepo := repository.NewOrderRepo(db)
+    tariffRepo := repository.NewTariffRepo(db)
+    userUC := usecase.NewUserUsecase(userRepo, sessionRepo)
+    orderUC := usecase.NewOrderUsecase(orderRepo, tariffRepo)
+    userH := handler.NewUserHandler(userUC)
+    _ = orderUC
     mux := http.NewServeMux()
-    mux.HandleFunc("/test", h.Test())
-
-    srv := &http.Server{
-        Addr:    ":8080",
-        Handler: mux,
-    }
-
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-
-    go func() {
-        log.Println("Server started on :8080")
-        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            log.Fatalf("Server error: %v", err)
-        }
-    }()
-
-    <-quit
-    log.Println("Shutting down server...")
-
-    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-    defer cancel()
-
-    if err := srv.Shutdown(ctx); err != nil {
-        log.Fatalf("Shutdown error: %v", err)
-    }
-    log.Println("Server stopped gracefully")
+    mux.HandleFunc("/register", userH.Register)
+    log.Printf("server started on :%s", cfg.Server.Port)
+    log.Fatal(http.ListenAndServe(":"+cfg.Server.Port, mux))
 }

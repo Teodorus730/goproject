@@ -1,0 +1,51 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    password_hash VARCHAR(64) NOT NULL,
+    email TEXT UNIQUE,
+
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+CREATE TABLE tariffes (
+    id SERIAL PRIMARY KEY,
+    price NUMERIC(10, 2) NOT NULL,
+    liters INT NOT NULL, -- литров в бутылке
+    name TEXT NOT NULL
+);
+
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
+    tarif_id INT NOT NULL REFERENCES tariffes(id),
+    amount INT NOT NULL, -- бутылок
+    address TEXT NOT NULL, -- адрес
+
+    status VARCHAR(20) DEFAULT 'UNDEFINED', --статус заказа UNDEFINED/NEW/ARRIVING/COMPLETED/CANCELED
+
+    total_price NUMERIC(10, 2) NOT NULL, -- колво бутылок * цена бутылки
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    completed_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,27 +1,31 @@
-package http
+package handler
 
 import (
+    "encoding/json"
     "net/http"
-	waterService "goproject/internal/waterService"
+    "goproject/internal/domain"
 )
 
-type handler struct {
-    uc waterService.UseCase
+type UserHandler struct {
+    uc domain.UserUsecase
 }
 
-func New(uc waterService.UseCase) *handler {
-    return &handler{uc: uc}
+func NewUserHandler(uc domain.UserUsecase) *UserHandler {
+    return &UserHandler{uc: uc}
 }
 
-func (h *handler) Test() http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        msg, err := h.uc.GetTest(r.Context())
-        if err != nil {
-            http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-        }
-
-		w.WriteHeader(http.StatusOK)
-        w.Write([]byte(msg))
+func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
+    var req struct {
+        Name string `json:"name"`
+        Email string `json:"email"`
+        Phone string `json:"phone"`
+        Password string `json:"password"`
     }
+    json.NewDecoder(r.Body).Decode(&req)
+    user, err := h.uc.Register(req.Name, req.Email, req.Phone, req.Password)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    json.NewEncoder(w).Encode(user)
 }
