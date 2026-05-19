@@ -21,6 +21,7 @@ type DBConfig struct {
 
 type ServerConfig struct {
     Port string
+    JwtSecret []byte
 }
 
 func New() (*Config, error) {
@@ -35,6 +36,7 @@ func New() (*Config, error) {
         },
         Server: ServerConfig{
             Port: os.Getenv("SERVER_PORT"),
+            JwtSecret: []byte(os.Getenv("JWT_SECRET")),
         },
     }, nil
 }

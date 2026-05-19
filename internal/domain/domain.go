@@ -1,30 +1,38 @@
 package domain
 
+import (
+    "context"
+)
+
 type UserRepository interface {
-    CreateUser(user *User) error
-    GetUserByID(id string) (*User, error)
+    CreateUser(ctx context.Context, user *User) (*User, error)
+    GetUserByID(ctx context.Context, id string) (*User, error)
+    GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 type SessionRepository interface {
-    CreateSession(session *Session) error
-    GetSessionByToken(token string) (*Session, error)
+    CreateSession(ctx context.Context, sessionID, userID string) error
+    GetSessionByUserID(ctx context.Context, userID string) (*Session, error)
+    UpdateSessionExpiry(ctx context.Context, sessionID string) error
 }
 
 type OrderRepository interface {
-    CreateOrder(order *Order) error
-    GetOrdersByUserID(userID string) ([]Order, error)
+    CreateOrder(ctx context.Context, order *Order) (*Order, error)
+    GetOrdersByUserID(ctx context.Context, userID string) ([]Order, error)
 }
 
 type TariffRepository interface {
-    GetTariffByID(id int) (*Tariff, error)
+    GetTariffByID(ctx context.Context, id int) (*Tariff, error)
 }
 
 type UserUsecase interface {
-    Register(name, email, phone, password string) (*User, error)
-    Login(email, password string) (*Session, error)
+    CreateUser(ctx context.Context, name, email, phone, password string) (*User, error)
+    CreateSession(ctx context.Context, sessionID, userID string) error
+    GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 type OrderUsecase interface {
-    PlaceOrder(userID string, tariffID int, amount int, address string) (*Order, error)
-    GetOrders(userID string) ([]Order, error)
+    PlaceOrder(ctx context.Context, userID string, tariffID int, amount int, address string) (*Order, error)
+    GetOrders(ctx context.Context, userID string) ([]Order, error)
 }
+

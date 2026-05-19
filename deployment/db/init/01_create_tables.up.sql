@@ -13,8 +13,6 @@ CREATE TABLE users (
     name TEXT NOT NULL,
     phone TEXT NOT NULL,
 
-    is_active BOOLEAN DEFAULT TRUE,
-
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,7 +35,7 @@ CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
-    tarif_id INT NOT NULL REFERENCES tariffes(id),
+    tariff_id INT NOT NULL REFERENCES tariffes(id),
     amount INT NOT NULL, -- бутылок
     address TEXT NOT NULL, -- адрес
 

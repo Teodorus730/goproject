@@ -1,35 +1,54 @@
 package main
 
 import (
-    "log"
-    "net/http"
-    "github.com/jmoiron/sqlx"
-    _ "github.com/lib/pq"
-    "goproject/internal/config"
-    "goproject/internal/waterService/delivery/http"
-    "goproject/internal/waterService/repository"
-    "goproject/internal/waterService/usecase"
+	"log/slog"
+	"net/http"
+	"os"
+
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"goproject/internal/config"
+	
+	handler "goproject/internal/waterService/delivery/http" 
+	"goproject/internal/waterService/repository"
+	"goproject/internal/waterService/usecase"
 )
 
 func main() {
-    cfg, err := config.New()
-    if err != nil {
-        log.Fatal(err)
-    }
-    db, err := sqlx.Connect("postgres", cfg.DB.DSN())
-    if err != nil {
-        log.Fatal(err)
-    }
-    userRepo := repository.NewUserRepo(db)
-    sessionRepo := repository.NewSessionRepo(db)
-    orderRepo := repository.NewOrderRepo(db)
-    tariffRepo := repository.NewTariffRepo(db)
-    userUC := usecase.NewUserUsecase(userRepo, sessionRepo)
-    orderUC := usecase.NewOrderUsecase(orderRepo, tariffRepo)
-    userH := handler.NewUserHandler(userUC)
-    _ = orderUC
-    mux := http.NewServeMux()
-    mux.HandleFunc("/register", userH.Register)
-    log.Printf("server started on :%s", cfg.Server.Port)
-    log.Fatal(http.ListenAndServe(":"+cfg.Server.Port, mux))
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	cfg, err := config.New()
+	if err != nil {
+		log.Error("failed to load config", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	db, err := sqlx.Connect("postgres", cfg.DB.DSN())
+	if err != nil {
+		log.Error("failed to connect to database", slog.Any("error", err))
+		os.Exit(1)
+	}
+
+	userRepo := repository.NewUserRepo(db, log)
+	sessionRepo := repository.NewSessionRepo(db, log)
+	orderRepo := repository.NewOrderRepo(db, log)
+	tariffRepo := repository.NewTariffRepo(db, log)
+	
+	userUC := usecase.NewUserUsecase(userRepo, sessionRepo, log)
+	
+	orderUC := usecase.NewOrderUsecase(orderRepo, tariffRepo, log)
+	_ = orderUC 
+
+	userH := handler.NewUserHandler(userUC, log)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/register", userH.Register)
+	mux.HandleFunc("/login", userH.LoginUser)
+
+	log.Info("server started", slog.String("port", cfg.Server.Port))
+	
+	if err := http.ListenAndServe(":"+cfg.Server.Port, mux); err != nil {
+		log.Error("server stopped unexpectedly", slog.Any("error", err))
+		os.Exit(1)
+	}
 }

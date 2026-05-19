@@ -3,6 +3,7 @@
 
 ## Винда
 
+### Рега
 ```
 $body = @{                                                                      
 name     = "PETYA"            
@@ -12,6 +13,16 @@ password = "secret_password"
 } | ConvertTo-Json
 
 Invoke-RestMethod -Uri "http://localhost:8080/register" -Method Post -ContentType "application/json" -Body $body
+```
+
+### Логин
+```
+$body = @{                                                                                           
+email    = "ivan@example.co"    
+password = "secret_password"     
+} | ConvertTo-Json          
+
+Invoke-RestMethod -Uri "http://localhost:8080/login" -Method Post -ContentType "application/json" -Body $body     
 ```
 
 

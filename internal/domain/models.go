@@ -8,13 +8,15 @@ type User struct {
 	Email string `json:"email" db:"email"`
 	Phone string `json:"phone" db:"phone"`
 	PasswordHash string `json:"-" db:"password_hash"`
+	CreatedAt time.Time `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 type Session struct {
-	ID int `json:"id" db:"id"`
-	UserID int `json:"user_id" db:"user_id"`
-	Token string `json:"token" db:"token"`
-	ExpiresAt time.Time `json:"expires_at" db:"expires_at"`
+	SessionID string `db:"session_id" json:"sessionID"`
+	UserID string `db:"user_id" json:"userID"`
+	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 }
 
 type Order struct {
