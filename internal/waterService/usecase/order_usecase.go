@@ -23,7 +23,7 @@ func (u *orderUsecase) PlaceOrder(ctx context.Context, userID string, tariffID i
         return nil, err
     }
 
-    total := amount * tariff.Price
+    total := float64(amount) * tariff.Price
     order := &domain.Order{UserID: userID, TariffID: tariffID, Amount: amount, Address: address, TotalPrice: total, Status: "NEW"}
     created_order, err1 := u.orderRepo.CreateOrder(ctx, order)
     return created_order, err1

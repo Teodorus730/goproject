@@ -20,17 +20,17 @@ type Session struct {
 }
 
 type Order struct {
-	ID int `json:"id" db:"id"`
+	ID string `json:"id" db:"id"`
 	UserID string `json:"user_id" db:"user_id"`
-	TariffID int `json:"tarif_id" db:"tarif_id"`
+	TariffID int `json:"tariff_id" db:"tariff_id"`
 	Amount int `json:"amount" db:"amount"`
 	Address string `json:"address" db:"address"`
-	TotalPrice int `json:"total_price" db:"total_price"`
+	TotalPrice float64 `json:"total_price" db:"total_price"`
 	Status string `json:"status" db:"status"`
 }
 
 type Tariff struct {
 	ID int `json:"id" db:"id"`
 	Name string `json:"name" db:"name"`
-	Price int `json:"price" db:"price"`
+	Price float64 `json:"price" db:"price"`
 }

@@ -18,7 +18,7 @@ func NewTariffRepo(db *sqlx.DB, log *slog.Logger) domain.TariffRepository {
 
 func (r *tariffRepo) GetTariffByID(ctx context.Context, id int) (*domain.Tariff, error) {
     var t domain.Tariff
-	err := r.postgresql.QueryRowContext(ctx, createUserQuery, id).Scan(
+	err := r.postgresql.QueryRowContext(ctx, GetTariffByIDQuery, id).Scan(
 		&t.ID, &t.Name, &t.Price,
 	)
 	if err != nil {

@@ -37,13 +37,15 @@ func main() {
 	userUC := usecase.NewUserUsecase(userRepo, sessionRepo, log)
 	
 	orderUC := usecase.NewOrderUsecase(orderRepo, tariffRepo, log)
-	_ = orderUC 
 
 	userH := handler.NewUserHandler(userUC, log)
+	orderH := handler.NewOrderHandler(orderUC, log)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/register", userH.Register)
 	mux.HandleFunc("/login", userH.LoginUser)
+	mux.HandleFunc("/add_order", orderH.AddNewOrder)
+	mux.HandleFunc("/get_orders", orderH.GetOrdersList)
 
 	log.Info("server started", slog.String("port", cfg.Server.Port))
 	

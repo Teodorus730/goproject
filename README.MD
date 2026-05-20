@@ -17,12 +17,36 @@ Invoke-RestMethod -Uri "http://localhost:8080/register" -Method Post -ContentTyp
 
 ### Логин
 ```
-$body = @{                                                                                           
-email    = "ivan@example.co"    
-password = "secret_password"     
-} | ConvertTo-Json          
+$loginBody = @{
+    email    = "ivan@example.com"
+    password = "secret_password"
+} | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8080/login" -Method Post -ContentType "application/json" -Body $body     
+$loginResponse = Invoke-RestMethod -Uri "http://localhost:8080/login" -Method Post -ContentType "application/json" -Body $loginBody 
+```
+
+### Создать заказ
+```
+$orderBody = @{
+    tarif_id = 1
+    amount   = 10
+    address  = "SixSeven St. 67"
+} | ConvertTo-Json
+
+$headers = @{
+    Authorization = "Bearer $($loginResponse.token)"
+}
+
+Invoke-RestMethod -Uri "http://localhost:8080/add_order" -Method Post -ContentType "application/json" -Body $orderBody -Headers $headers   
+```
+
+### Все заказы пользователя
+```
+$headers = @{
+    Authorization = "Bearer $($loginResponse.token)"
+}
+
+Invoke-RestMethod -Uri "http://localhost:8080/get_orders" -Method Get -Headers $headers   
 ```
 
 
@@ -44,4 +68,11 @@ curl -X POST http://localhost:8080/register \
 
 ```
  docker exec -it postgres psql -U postgres -d database -c "SELECT * FROM users;"
+```
+
+# Создание тарифов
+
+```
+docker exec -it postgres psql -U postgres -d database -c "INSERT INTO tariffes (price, liters, name) VALUES (100, 10, 'Desyat litrov')"
+docker exec -it postgres psql -U postgres -d database -c "INSERT INTO tariffes (price, liters, name) VALUES (200, 20, 'Dvatsat litrov')"
 ```
