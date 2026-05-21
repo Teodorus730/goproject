@@ -6,23 +6,23 @@
 ### Рега
 ```
 $body = @{                                                                      
-name     = "PETYA"            
-email    = "ivan@example.com" 
+name     = "VANYA"            
+email    = "ivan1990@example.com" 
 phone    = "79991234567"    
 password = "secret_password"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8080/register" -Method Post -ContentType "application/json" -Body $body
+Invoke-RestMethod -Uri "http://localhost:8080/auth/register" -Method Post -ContentType "application/json" -Body $body
 ```
 
 ### Логин
 ```
 $loginBody = @{
-    email    = "ivan@example.com"
+    email    = "ivan1990@example.com"
     password = "secret_password"
 } | ConvertTo-Json
 
-$loginResponse = Invoke-RestMethod -Uri "http://localhost:8080/login" -Method Post -ContentType "application/json" -Body $loginBody 
+$loginResponse = Invoke-RestMethod -Uri "http://localhost:8080/auth/login" -Method Post -ContentType "application/json" -Body $loginBody 
 ```
 
 ### Создать заказ
@@ -37,7 +37,7 @@ $headers = @{
     Authorization = "Bearer $($loginResponse.token)"
 }
 
-Invoke-RestMethod -Uri "http://localhost:8080/add_order" -Method Post -ContentType "application/json" -Body $orderBody -Headers $headers   
+Invoke-RestMethod -Uri "http://localhost:8080/orders/add_order" -Method Post -ContentType "application/json" -Body $orderBody -Headers $headers   
 ```
 
 ### Все заказы пользователя
@@ -46,7 +46,7 @@ $headers = @{
     Authorization = "Bearer $($loginResponse.token)"
 }
 
-Invoke-RestMethod -Uri "http://localhost:8080/get_orders" -Method Get -Headers $headers   
+Invoke-RestMethod -Uri "http://localhost:8080/orders/get_orders" -Method Get -Headers $headers   
 ```
 
 

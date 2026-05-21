@@ -2,16 +2,16 @@ package main
 
 import (
 	"log/slog"
-	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"context"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"goproject/internal/config"
-	
-	handler "goproject/internal/waterService/delivery/http" 
-	"goproject/internal/waterService/repository"
-	"goproject/internal/waterService/usecase"
+	"goproject/internal/server"
 )
 
 func main() {
@@ -28,29 +28,40 @@ func main() {
 		log.Error("failed to connect to database", slog.Any("error", err))
 		os.Exit(1)
 	}
-
-	userRepo := repository.NewUserRepo(db, log)
-	sessionRepo := repository.NewSessionRepo(db, log)
-	orderRepo := repository.NewOrderRepo(db, log)
-	tariffRepo := repository.NewTariffRepo(db, log)
 	
-	userUC := usecase.NewUserUsecase(userRepo, sessionRepo, log)
-	
-	orderUC := usecase.NewOrderUsecase(orderRepo, tariffRepo, log)
+	termCtx, termCancel := context.WithCancel(context.Background())
+	go waitSigterm(termCancel, log)
 
-	userH := handler.NewUserHandler(userUC, log)
-	orderH := handler.NewOrderHandler(orderUC, log)
+	errCh := make(chan error, 1)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/register", userH.Register)
-	mux.HandleFunc("/login", userH.LoginUser)
-	mux.HandleFunc("/add_order", orderH.AddNewOrder)
-	mux.HandleFunc("/get_orders", orderH.GetOrdersList)
-
-	log.Info("server started", slog.String("port", cfg.Server.Port))
-	
-	if err := http.ListenAndServe(":"+cfg.Server.Port, mux); err != nil {
-		log.Error("server stopped unexpectedly", slog.Any("error", err))
-		os.Exit(1)
+	srv := server.NewServer(cfg, db, log)
+	err = srv.Run(errCh)
+	if err != nil {
+		log.Error("failed to run server", slog.Any("error", err))
 	}
+
+	select {
+	case err := <-errCh:
+		log.Error("got error from server", slog.Any("error", err))
+	case <-termCtx.Done():
+		err := srv.Stop()
+		if err != nil {
+			log.Error("shutdown failed", slog.Any("error", err))
+		}
+	}
+
+	log.Info("service terminated")
+}
+
+func waitSigterm(terminate context.CancelFunc, log *slog.Logger) {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+	caughtSignal := <-sigCh
+
+	log.Warn("service starts termination", slog.String("signal", caughtSignal.String()))
+
+	signal.Stop(sigCh)
+	close(sigCh)
+	terminate()
 }

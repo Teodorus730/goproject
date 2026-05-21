@@ -6,11 +6,9 @@ import (
     "log/slog"
 	"context"
 	"time"
-	"strings"
 
     "goproject/internal/domain"
 
-	"github.com/dgrijalva/jwt-go"
     "github.com/go-playground/validator/v10"
 )
 
@@ -31,23 +29,10 @@ func (h *OrderHandler) AddNewOrder(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("Received new order request")
 	h.log.Info("Incoming auth header", slog.String("header", r.Header.Get("Authorization")))
 
-	authHeader := r.Header.Get("Authorization")
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// Парсим токен без валидации подписи (чисто чтобы достать ID для теста)
-	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
-	if err != nil {
-		h.log.Error("Failed to parse token", slog.Any("error", err))
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	userID, ok2 := claims["userID"].(string) // или "user_id", посмотри как в /login зашито
-
-	if !ok || !ok2 || userID == "" {
-		h.log.Error("Invalid claims or missing userID")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		h.log.Error("User not authenticated, missing userID")
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
@@ -81,23 +66,10 @@ func (h *OrderHandler) GetOrdersList(w http.ResponseWriter, r *http.Request) {
     h.log.Info("Received get orders list request")
 	h.log.Info("Incoming auth header", slog.String("header", r.Header.Get("Authorization")))
 
-	authHeader := r.Header.Get("Authorization")
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// Парсим токен без валидации подписи (чисто чтобы достать ID для теста)
-	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
-	if err != nil {
-		h.log.Error("Failed to parse token", slog.Any("error", err))
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	userID, ok2 := claims["userID"].(string) // или "user_id", посмотри как в /login зашито
-
-	if !ok || !ok2 || userID == "" {
-		h.log.Error("Invalid claims or missing userID")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		h.log.Error("User not authenticated, missing userID")
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
