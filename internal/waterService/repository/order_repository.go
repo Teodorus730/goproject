@@ -2,7 +2,10 @@ package repository
 
 import (
     "github.com/jmoiron/sqlx"
+    "github.com/google/uuid"
+
     "goproject/internal/domain"
+	"goproject/internal/rabbitmq"
     "context"
     "log/slog"
 	"fmt"
@@ -10,11 +13,12 @@ import (
 
 type orderRepo struct { 
     postgresql *sqlx.DB 
+    rabbit     *rabbitmq.RabbitMQ
     log *slog.Logger
 }
 
-func NewOrderRepo(db *sqlx.DB, log *slog.Logger) domain.OrderRepository {
-    return &orderRepo{postgresql: db, log: log}
+func NewOrderRepo(db *sqlx.DB, rabbit *rabbitmq.RabbitMQ, log *slog.Logger) domain.OrderRepository {
+    return &orderRepo{postgresql: db, rabbit: rabbit, log: log}
 }
 
 
@@ -57,4 +61,33 @@ func (r *orderRepo) GetOrdersByUserID(ctx context.Context, userID string) ([]dom
     }
 
     return orders, nil
+}
+
+func (s *orderRepo) ChangeOrderStatus(ctx context.Context, newStatusData *domain.ChangeOrderStatusData) error {
+	var err error
+	newStatusData.UUIDOrderID, err = uuid.Parse(newStatusData.OrderID)
+	if err != nil{
+		s.log.Error("failed to parse order uuid", slog.Any("error", err))
+		return err
+	}
+	result, err := s.postgresql.NamedExecContext(
+		ctx,
+		changeOrderStatusQuery,
+		newStatusData,
+	)
+	if err != nil {
+		s.log.Error("failed to change order status", slog.Any("error", err))
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		s.log.Error("failed to get delete rows affected", slog.Any("error", err))
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no orders status changed")
+	}
+
+	return nil
 }

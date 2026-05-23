@@ -7,7 +7,7 @@ const (
 
 	createOrderQuery = `INSERT INTO orders(user_id,tariff_id,amount,address,total_price,status) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,user_id,tariff_id,amount,address,total_price,status`
 	getOrdersByUserIDQuery = `SELECT id,user_id,tariff_id,amount,address,total_price,status FROM orders WHERE user_id=$1 ORDER BY created_at DESC`
-
+	changeOrderStatusQuery = `UPDATE orders SET status = :status WHERE id = :order_id`
 
 	createSessionQuery = `INSERT INTO sessions (session_id, user_id, created_at, expires_at) VALUES ($1, $2, NOW(), NOW() + INTERVAL '24 hours')`
 	getSessionByUserIDQuery = `SELECT session_id, user_id, created_at, expires_at FROM sessions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`

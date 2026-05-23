@@ -6,6 +6,7 @@ import (
 	"goproject/internal/waterService/repository"
 	"goproject/internal/waterService/usecase"
 	"goproject/internal/middleware"
+	"goproject/internal/rabbitmq"
 
 	"context"
 	"fmt"
@@ -20,14 +21,16 @@ import (
 type Server struct {
 	cfg    *config.Config
 	db     *sqlx.DB
+	rabbit *rabbitmq.RabbitMQ
 	log    *slog.Logger
 	srv    *http.Server
 }
 
-func NewServer(cfg *config.Config, db *sqlx.DB, log *slog.Logger) *Server {
+func NewServer(cfg *config.Config, db *sqlx.DB, rabbit *rabbitmq.RabbitMQ, log *slog.Logger) *Server {
 	return &Server{
 		cfg:    cfg,
 		db:     db,
+		rabbit: rabbit,
 		log:    log,
 	}
 }
@@ -35,7 +38,7 @@ func NewServer(cfg *config.Config, db *sqlx.DB, log *slog.Logger) *Server {
 func (s *Server) Run(errCh chan error) error {
 	userRepo := repository.NewUserRepo(s.db, s.log)
 	sessionRepo := repository.NewSessionRepo(s.db, s.log)
-	orderRepo := repository.NewOrderRepo(s.db, s.log)
+	orderRepo := repository.NewOrderRepo(s.db, s.rabbit, s.log)
 	tariffRepo := repository.NewTariffRepo(s.db, s.log)
 	
 	userUC := usecase.NewUserUsecase(userRepo, sessionRepo, s.log)

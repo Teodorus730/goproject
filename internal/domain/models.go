@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"time"
+	"github.com/google/uuid"
+)
 
 type User struct {
 	ID string `json:"id" db:"id"`
@@ -33,4 +36,11 @@ type Tariff struct {
 	ID int `json:"id" db:"id"`
 	Name string `json:"name" db:"name"`
 	Price float64 `json:"price" db:"price"`
+}
+
+type ChangeOrderStatusData struct {
+	OrderID     string    `json:"order_id" validate:"required"`
+	UUIDOrderID uuid.UUID `db:"order_id" json:"-"`
+	NewStatus   string    `db:"status" json:"status" validate:"required,oneof=UNDEFINED NEW ARRIVING COMPLETED CANCELED"`
+	UpdatedAt   time.Time `db:"updated_at" json:"-"`
 }

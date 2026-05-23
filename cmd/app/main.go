@@ -12,6 +12,7 @@ import (
 
 	"goproject/internal/config"
 	"goproject/internal/server"
+	"goproject/internal/rabbitmq"
 )
 
 func main() {
@@ -32,9 +33,15 @@ func main() {
 	termCtx, termCancel := context.WithCancel(context.Background())
 	go waitSigterm(termCancel, log)
 
+	rabbit, err := rabbitmq.NewRabbitMQ(&cfg.RabbitMQ, termCtx, log)
+	if err != nil {
+		log.Error("failed to create rabbit connection", slog.Any("error", err))
+		return
+	}
+
 	errCh := make(chan error, 1)
 
-	srv := server.NewServer(cfg, db, log)
+	srv := server.NewServer(cfg, db, rabbit, log)
 	err = srv.Run(errCh)
 	if err != nil {
 		log.Error("failed to run server", slog.Any("error", err))

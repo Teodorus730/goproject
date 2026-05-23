@@ -34,9 +34,62 @@ services:
       interval: 30s
       timeout: 30s
       retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+      RABBITMQ_DEFAULT_VHOST: ${RABBIT_VHOST}
+
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_management load_definitions \"/etc/rabbitmq/definitions.json\""
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./deployment/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+    restart: unless-stopped
+    networks:
+      - backend
+
+  order_workers:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: order_workers
+    env_file:
+      - .env
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBIT_PASSWORD: ${RABBITMQ_DEFAULT_PASS}
+      RABBIT_VHOST: ${RABBIT_VHOST}
+      WORKERS_COUNT: 10
+    depends_on:
+      app:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
     
 volumes:
     postgres_data:
+    rabbitmq_data:
 
 networks:
   backend:
