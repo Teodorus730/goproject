@@ -19,6 +19,11 @@ type SessionRepository interface {
 type OrderRepository interface {
     CreateOrder(ctx context.Context, order *Order) (*Order, error)
     GetOrdersByUserID(ctx context.Context, userID string) ([]Order, error)
+
+    ChangeOrderStatus(ctx context.Context, newStatusData *ChangeOrderStatusData) error
+
+    PublishNewOrder(orderId string) error
+    StartStatusChangeConsumer(queueName string)
 }
 
 type TariffRepository interface {

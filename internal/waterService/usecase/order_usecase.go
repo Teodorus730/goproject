@@ -26,6 +26,14 @@ func (u *orderUsecase) PlaceOrder(ctx context.Context, userID string, tariffID i
     total := float64(amount) * tariff.Price
     order := &domain.Order{UserID: userID, TariffID: tariffID, Amount: amount, Address: address, TotalPrice: total, Status: "NEW"}
     created_order, err1 := u.orderRepo.CreateOrder(ctx, order)
+
+    orderId := created_order.ID
+    err = u.orderRepo.PublishNewOrder(orderId)
+	if err != nil {
+		u.log.Error("Failed to publish new order", slog.Any("error", err))
+		return created_order, err
+	}
+
     return created_order, err1
 }
 

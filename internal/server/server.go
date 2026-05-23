@@ -38,7 +38,10 @@ func NewServer(cfg *config.Config, db *sqlx.DB, rabbit *rabbitmq.RabbitMQ, log *
 func (s *Server) Run(errCh chan error) error {
 	userRepo := repository.NewUserRepo(s.db, s.log)
 	sessionRepo := repository.NewSessionRepo(s.db, s.log)
+
 	orderRepo := repository.NewOrderRepo(s.db, s.rabbit, s.log)
+	orderRepo.StartStatusChangeConsumer("order-status-change")
+
 	tariffRepo := repository.NewTariffRepo(s.db, s.log)
 	
 	userUC := usecase.NewUserUsecase(userRepo, sessionRepo, s.log)
