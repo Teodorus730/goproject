@@ -16,6 +16,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Server struct {
@@ -54,6 +55,8 @@ func (s *Server) Run(errCh chan error) error {
 	middlewareManager := middleware.NewMiddlewareManager(s.log, sessionRepo)
 
 	r := mux.NewRouter()
+	r.Use(middlewareManager.MetricsMiddleware)
+	r.Handle("/metrics", promhttp.Handler())
 	
 	ordersRouter := r.PathPrefix("/orders").Subrouter()
 	ordersRouter.Use(middlewareManager.JWTMiddleware)
